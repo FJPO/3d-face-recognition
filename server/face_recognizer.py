@@ -89,6 +89,7 @@ class FaceRecognizer:
 
 if __name__ == '__main__':
     faceRecognizer = FaceRecognizer()
-    faceRecognizer.add_face_to_database('face_data/ilya-deep.jpg')
+    ppath= input('Для добавления нового пользователя введите путь к файлу:')
+    faceRecognizer.add_face_to_database(ppath)
 
 

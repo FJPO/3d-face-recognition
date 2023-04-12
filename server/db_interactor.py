@@ -32,4 +32,4 @@ class DB_interactor:
         return DB_interactor.cursor.fetchall()
 
 if __name__ == '__main__':
-    print('this is database interactor')
+    print('Это модуль управления бахами данных')
