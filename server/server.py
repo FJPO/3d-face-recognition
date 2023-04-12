@@ -6,9 +6,9 @@ import time
 import base64
 from face_recognizer import FaceRecognizer
 
-BUFF_SIZE = 65536
-UDP_IP = "127.0.0.1"
-UDP_PORT = 5000
+BUFF_SIZE = 65000
+IP = "127.0.0.1"
+PORT = 5000
 fps,st,frames_to_count,cnt = (0,0,20,0)
 
 sfr = FaceRecognizer()
@@ -36,47 +36,19 @@ def face_rec(fr):
 
 if __name__ == '__main__':
     print('hi im server')
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((UDP_IP, UDP_PORT))
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind((IP, PORT))
+    sock.listen()
+    conn, addr = sock.accept()
     while True:
-        msg, address = sock.recvfrom(BUFF_SIZE)
+        msg, address = conn.recvfrom(BUFF_SIZE)
 
-        WIDTH = 400
+        WIDTH = 640
         imageDict = pickle.loads(msg)
-        frame = imageDict['rgb']
-        frame = imutils.resize(frame, width=WIDTH)
-        depth_frame = imageDict['d']
-        depth_frame = imutils.resize(depth_frame, width=WIDTH)
+        names = sfr.identify(imageDict['encodings'])
 
+        conn.send(str.encode('Открывай, там {} пришел(а)'.format(names)))
 
-        # data = base64.b64decode(msg, ' /')
-        # npdata = np.frombuffer(data, dtype=np.uint8)
-        #
-        # frame = cv2.imdecode(npdata, 1)
-
-        # frame = cv2.putText(frame, 'FPS: ' + str(fps), (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-        sock.sendto(str.encode(face_rec(frame)), address)
-        # fun_feature(frame)
-        cv2.imshow("RECEIVING VIDEO", frame)
-        depth_frame = np.array(depth_frame)
-        depth_frame[ depth_frame > 3000 ] = 3000
-        depth_frame = depth_frame / 3000
-        cv2.imshow("DEPTH VIDEO", depth_frame)
-
-
-
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord('q'):
-            sock.close()
-            break
-        if cnt == frames_to_count:
-            try:
-                fps = round(frames_to_count / (time.time() - st))
-                st = time.time()
-                cnt = 0
-            except:
-                pass
-        cnt += 1
 
 
 

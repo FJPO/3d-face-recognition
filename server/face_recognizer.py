@@ -45,15 +45,7 @@ class FaceRecognizer:
             self.known_face_names.append(t[0])
             self.known_face_encodings.append(t[1])
 
-
-    def detect_known_faces(self, frame):
-        small_frame = cv2.resize(frame, (0, 0), fx=self.frame_resizing, fy=self.frame_resizing)
-        # Find all the faces and face encodings in the current frame of video
-        # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
-        rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
-        face_locations = face_recognition.face_locations(rgb_small_frame)
-        face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
-
+    def identify(self, face_encodings):
         face_names = []
         for face_encoding in face_encodings:
             # See if the face is a match for the known face(s)
@@ -71,15 +63,32 @@ class FaceRecognizer:
             if matches[best_match_index]:
                 name = self.known_face_names[best_match_index]
             face_names.append(name)
+        return face_names
+
+
+    def detect_known_faces(self, frame):
+        small_frame = cv2.resize(frame, (0, 0), fx=self.frame_resizing, fy=self.frame_resizing)
+        # Find all the faces and face encodings in the current frame of video
+        # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
+        rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
+        face_locations = face_recognition.face_locations(rgb_small_frame)
+        face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
+
+
 
         # Convert to numpy array to adjust coordinates with frame resizing quickly
         face_locations = np.array(face_locations)
         face_locations = face_locations / self.frame_resizing
-        return face_locations.astype(int), face_names
+        return face_locations.astype(int), self.identify(face_encodings)
 
     def add_face_to_database(self, path):
         img = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2RGB)
         (filename, ext) = os.path.splitext(os.path.basename(path))
         vector = face_recognition.face_encodings(img)[0]
         DB_interactor.add_faces(filename, vector)
+
+if __name__ == '__main__':
+    faceRecognizer = FaceRecognizer()
+    faceRecognizer.add_face_to_database('face_data/ilya-deep.jpg')
+
 
