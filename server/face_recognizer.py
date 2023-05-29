@@ -3,17 +3,14 @@ import cv2
 import os
 import glob
 import numpy as np
-from db_interactor import DB_interactor
 
 class FaceRecognizer:
-    def __init__(self):
-        self.known_face_encodings = []
-        self.known_face_names = []
+    known_face_encodings = []
+    known_face_names = []
+    frame_resizing = 0.25
 
-        # Resize frame for a faster speed
-        self.frame_resizing = 0.25
-
-    def load_encoding_images_from_file(self, images_path):
+    @staticmethod
+    def load_encoding_images_from_file(images_path):
         """
         Load encoding images from path
         :param images_path:
@@ -36,38 +33,42 @@ class FaceRecognizer:
             img_encoding = face_recognition.face_encodings(rgb_img)[0]
 
             # Store file name and file encoding
-            self.known_face_encodings.append(img_encoding)
-            self.known_face_names.append(filename)
+            FaceRecognizer.known_face_encodings.append(img_encoding)
+            FaceRecognizer.known_face_names.append(filename)
         print("Encoding images loaded")
 
-    def load_encodings_from_database(self):
+    @staticmethod
+    def load_encodings_from_database():
+        from db_interactor import DB_interactor
         for t in DB_interactor.load_all():
-            self.known_face_names.append(t[0])
-            self.known_face_encodings.append(t[1])
+            FaceRecognizer.known_face_names.append(t[0])
+            FaceRecognizer.known_face_encodings.append(t[1])
 
-    def identify(self, face_encodings):
+    @staticmethod
+    def identify(face_encodings):
         face_names = []
         for face_encoding in face_encodings:
             # See if the face is a match for the known face(s)
-            matches = face_recognition.compare_faces(self.known_face_encodings, face_encoding)
+            matches = face_recognition.compare_faces(FaceRecognizer.known_face_encodings, face_encoding)
             name = "Unknown"
 
-            # # If a match was found in known_face_encodings, just use the first one.
+            # # If a match was founFaceRecognizer.known_face_encodings, just use the first one.
             # if True in matches:
             #     first_match_index = matches.index(True)
-            #     name = known_face_names[first_match_index]
+            #     FaceRecognizer.known_face_names[first_match_index]
 
             # Or instead, use the known face with the smallest distance to the new face
-            face_distances = face_recognition.face_distance(self.known_face_encodings, face_encoding)
+            face_distances = face_recognition.face_distance(FaceRecognizer.known_face_encodings, face_encoding)
             best_match_index = np.argmin(face_distances)
             if matches[best_match_index]:
-                name = self.known_face_names[best_match_index]
+                name = FaceRecognizer.known_face_names[best_match_index]
             face_names.append(name)
         return face_names
 
 
-    def detect_known_faces(self, frame):
-        small_frame = cv2.resize(frame, (0, 0), fx=self.frame_resizing, fy=self.frame_resizing)
+    @staticmethod
+    def detect_known_faces(frame):
+        small_frame = cv2.resize(frame, (0, 0), fx=FaceRecognizer.frame_resizing, fy=FaceRecognizer.frame_resizing)
         # Find all the faces and face encodings in the current frame of video
         # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
         rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
@@ -78,18 +79,15 @@ class FaceRecognizer:
 
         # Convert to numpy array to adjust coordinates with frame resizing quickly
         face_locations = np.array(face_locations)
-        face_locations = face_locations / self.frame_resizing
-        return face_locations.astype(int), self.identify(face_encodings)
+        face_locations = face_locations / FaceRecognizer.frame_resizing
+        return face_locations.astype(int), FaceRecognizer.identify(face_encodings)
 
-    def add_face_to_database(self, path):
+    @staticmethod
+    def get_vector(path):
         img = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2RGB)
-        (filename, ext) = os.path.splitext(os.path.basename(path))
         vector = face_recognition.face_encodings(img)[0]
-        DB_interactor.add_faces(filename, vector)
+        return vector
 
-if __name__ == '__main__':
-    faceRecognizer = FaceRecognizer()
-    ppath= input('Для добавления нового пользователя введите путь к файлу:')
-    faceRecognizer.add_face_to_database(ppath)
+
 
 

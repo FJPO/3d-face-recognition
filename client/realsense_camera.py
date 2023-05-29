@@ -1,5 +1,6 @@
 import pyrealsense2 as rs
 import numpy as np
+import cv2
 
 
 class RealsenseCamera:
@@ -30,8 +31,7 @@ class RealsenseCamera:
         hole_filling = rs.hole_filling_filter()
         filled_depth = hole_filling.process(filtered_depth)
 
-        colorizer = rs.colorizer()
-        depth_colormap = np.asanyarray(colorizer.colorize(filled_depth).get_data())
+
 
         depth_image = np.asanyarray(filled_depth.get_data())
         color_image = np.asanyarray(color_frame.get_data())

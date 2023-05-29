@@ -24,7 +24,11 @@ if __name__ == '__main__':
         WIDTH = 640
         imageDict = pickle.loads(msg)
         names = fr.identify(imageDict['encodings'])
-        resp = 'предоставить доступ для: {}'.format(names)
+        resp = 'Обнаружен пользователь: {}'.format(names)
+        if names[0] == 'Unknown':
+            resp = 'Обнаружен пользователь: {}, доступ не предоставлять'.format(names)
+        else:
+            resp = 'Обнаружен пользователь: {}, предоставить доступ'.format(names)
         conn.send(str.encode(resp))
         with open(logfile, 'a') as f:
             f.write('{} {}\n'.format(datetime.now(),resp))
